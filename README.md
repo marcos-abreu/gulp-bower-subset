@@ -27,18 +27,19 @@ this will output all your bower dependencies in the `./build` folder.
 
 `gulp-bower-subset` will do two things:
 
-1 - first it will execute a `bower` command (you can disable or change the command)
-2 - it will process the dependencies in the same order as listed in `dependencies` section returning a stream of dependency files to be consumed by other gulp plugins.
+1 - first it will execute a `bower` command (you can disable or change the command)    
+2 - it will process the dependencies in the same order as listed in `dependencies` section of your project's `bower.json` file returning a stream of dependency files to be consumed by other gulp plugins.
 
-### Main File
+#### Witch file to include?
 
 How does `gulp-bower-subset` identifies witch file from each dependency to include in the stream?
 
 When looping over each dependency `gulp-bower-subset` will try the following:
-    - if the component has a `bower.json` file with `main` entry containing any `js` file use them
-    - otherwise look for files starting with the component's name in the component root folder
-    - otherwise look for a file called `index.js` in the component root folder
-    - if none of these are found ignore the component
+
+- if the component has a `bower.json` file with a `main` entry containing any `js` file use them     
+- otherwise look for files starting with the component's name in the component root folder    
+- otherwise look for a file called `index.js` in the component root folder    
+- if none of these are found ignore the component
 
 `subsets` override this behavior, check the `subsets` section bellow for more info
 
@@ -49,9 +50,9 @@ When looping over each dependency `gulp-bower-subset` will try the following:
 ### `options.cwd`
 Type: `String`
 
-this options should indicate the application root path, where your `bower.json` file can be found, this will default to the current folder if not specified.
+this option should indicate the application root path, where your `bower.json` file can be found, this will default to the current folder if not specified.
 
-The following example combines (using `gulp-concat`) all the dependencies for a project found in the `module` subfolder into one file
+The following example combines (using `gulp-concat`) all the dependencies for a project found in the `projectA` subfolder into one file
 
 ```javascript
 var bower   = require( 'gulp-bower-subset' ),
@@ -59,7 +60,7 @@ var bower   = require( 'gulp-bower-subset' ),
 
 gulp.task( 'dependencies', function(){
   return bower( {
-    cwd: './module'
+    cwd: './projectA/'
   } )
     .pipe( concat( 'combined.js' ) )
     .pipe( gulp.dest( 'build/' ) );
@@ -85,16 +86,16 @@ gulp.task( 'dependencies', function(){
     .pipe( concat( 'combined.js' ) )
     .pipe( gulp.dest( 'build/' ) )
     .pipe( uglify() )
-    .pipe( gulp.dest( 'build/' ) );
+    .pipe( gulp.dest( 'build/min/' ) );
 } );
 ```
 
 ### options.command
 Type: `String`
 
-By default before streaming bower dependencies this plugin will execute `bower install` command in the `options.pwd` folder, after this command finishes the plugin will process the dependencies. Use the `options.command` to modify the command to be executed by the plugin (e.g: pass `'update'` will execute bower update). If you don't want any command to be executed prior to processing the dependencies then assign `options.command` to `null`;
+By default before streaming bower dependencies this plugin will execute `bower install` command in the `options.pwd` folder, after this command finishes the plugin will process the dependencies. Use the `options.command` to modify the command to be executed by the plugin (e.g: passing `'update'` will execute bower update). If you don't want any command to be executed prior to processing the dependencies then assign `options.command` to `null`;
 
-The following example bypass the bower command by passing `null` to `options.command` - it build on the previous example by providing source maps (using `gulp-sourcemaps`) for the minified file:
+The following example bypass the bower command by passing `null` to `options.command` - the example also builds on the previous one by providing source maps (using `gulp-sourcemaps`) for the minified file:
 
 ```javascript
 var bower       = require( 'gulp-bower-subset' ),
@@ -111,13 +112,13 @@ gulp.task( 'dependencies', function(){
     .pipe( sourcemaps.init() )
     .pipe( uglify() )
     .pipe( sourcemaps.write( '.' ) )
-    .pipe( gulp.dest( 'build/' ) );
+    .pipe( gulp.dest( 'build/min/' ) );
 } );
 ```
 
-Any extra parameters passed to the `options` object will be used by the bower command.
+Any extra parameters passed to the `options` object will be forward to the bower command.
 
-For example the following executes a bower update before processing the project dependencies:
+For example the following executes a `bower update` before processing the project dependencies:
 
 ```javascript
 var bower       = require( 'gulp-bower-subset' ),
@@ -142,13 +143,13 @@ gulp.task( 'dependencies', function(){
 ### `options.binders`
 Type: `String`
 
-Full path to a custom binders folder, where you can create special binders for components subsets not originally supported by `gulp-bower-subset`.
+Path to a custom binders folder (relative to `options.cwd`), where you can create special binders for components `subsets` not originally supported by `gulp-bower-subset`.
 
 To understand more about `subset` and `binders` read the following section.
 
 ## Subsets
 
-More often than not client applications needs only a subset of some of its dependencies - this allows the application to have better control over its dependencies. To active this define a `dependencies-subset` entry in the `bower.json` file for your project with the necessary subset for each component.
+More often than not client applications needs only a subset of some of its dependencies - this allows the application to have better control over its dependencies. To active this define a `dependencies-subset` entry in the `bower.json` file of your project with the necessary subset entries for each component.
 
 How to define subsets will vary from component to component, by default `gulp-bower-subset` will treat each subset item as individual file entries and it will include each in the stream instead of the main component file.
 
@@ -161,7 +162,7 @@ For example to include `handlebars`, but only the runtime as your project depend
 },
 "dependencies-subset": {
   "handlebars": {
-    scripts: [ "handlebars.runtime.js" ]
+    "scripts": [ "handlebars.runtime.js" ]
   }
 }
 ```
@@ -177,7 +178,7 @@ So for example to compile `modernizer` with only a few subset items you can:
 },
 "dependencies-subset": {
   "modernizr": {
-    scripts: [
+    "scripts": [
       "css/fontface",
       "inputtypes",
       "testStyles",
@@ -190,9 +191,14 @@ So for example to compile `modernizer` with only a few subset items you can:
 }
 ```
 
-If the component you are using in your project doesn't have a special binder yet, you can create one by following this template and passing the `options.binders` with the path for the special binders - each binder file should be named the same as the component name in the bower `dependencies` entry.
+If the component you are using in your project doesn't have a special binder yet, you can create one by following this template and passing the `options.binders` with the path your custom binders folder - each binder file should be named the same as the component name in the bower `dependencies` entry.
 
-Each binder is a nodejs file that should export a `process` method, this method should expect two parameters: `cPath` (full path to the component folder) and subset (the subset entry from the bower.json file for the specific component) - and the method should return a list of vinyl files 
+Each nodejs binder file should export a `process` method, this method should expect two parameters: 
+
+- `cPath` - full path to the component folder)
+- `subset` - the subset object literal entry from the `bower.json` file for the specific component
+
+The `process` method should return a list of vinyl files - that will be included by the `gulp-bower-subset` plugin in the stream 
 
 [travis-url]: http://travis-ci.org/lazd/gulp-replace
 [travis-image]: https://secure.travis-ci.org/lazd/gulp-replace.svg?branch=master
