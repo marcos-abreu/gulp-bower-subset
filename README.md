@@ -10,7 +10,7 @@ First, install `gulp-bower-subset` as a development dependency for your project:
 npm install --save-dev gulp-bower-subset
 ```
 
-Then, add it to your `Gulpfile.js`:
+Now you can use it on your project's `Gulpfile.js` to define your tasks:
 
 ```javascript
 var bower = require( 'gulp-bower-subset' );
@@ -21,7 +21,26 @@ gulp.task( 'dependencies', function(){
 } );
 ```
 
-this will output all your bower dependencies in the `./build` folder
+this will output all your bower dependencies in the `./build` folder.
+
+## Behind the Scene
+
+`gulp-bower-subset` will do two things:
+
+1 - first it will execute a `bower` command (you can disable or change the command)
+2 - it will process the dependencies in the same order as listed in `dependencies` section returning a stream of dependency files to be consumed by other gulp plugins.
+
+### Main File
+
+How does `gulp-bower-subset` identifies witch file from each dependency to include in the stream?
+
+When looping over each dependency `gulp-bower-subset` will try the following:
+    - if the component has a `bower.json` file with `main` entry containing any `js` file use them
+    - otherwise look for files starting with the component's name in the component root folder
+    - otherwise look for a file called `index.js` in the component root folder
+    - if none of these are found ignore the component
+
+`subsets` override this behavior, check the `subsets` section bellow for more info
 
 ## API
 
